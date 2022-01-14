@@ -5,6 +5,8 @@ from flask import Flask,render_template
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager
+
 
 #创建Flask实例
 app = Flask(__name__)
@@ -15,6 +17,9 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 #创建迁移对象
 migrate = Migrate(app,db)
+
+login = LoginManager(app)
+login.login_view = 'login'
 
 #从app包中导入routes模块
 from app import routes
