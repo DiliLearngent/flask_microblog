@@ -5,6 +5,7 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash,check_password_hash
 from flask_login import UserMixin
 from app import login
+from hashlib import md5
 
 @login.user_loader
 def load_user(id):
@@ -16,7 +17,11 @@ class User(UserMixin,db.Model):
     username = db.Column(db.String(64),index=True,unique=True)
     email = db.Column(db.String(128),index=True,unique=True)
     password_hash = db.Column(db.String(128))
+    #更新字段
+    about_me = db.Column(db.String(140))
+    last_seen = db.Column(db.DateTime,default=datetime.utcnow)
     posts = db.relationship('Post',backref='author',lazy='dynamic')
+
 
     def __repr__(self) -> str:
         #return '<User {}>'.format(self.username)
@@ -29,6 +34,13 @@ class User(UserMixin,db.Model):
     #用户输入的密码与数据库中的hash值进行判断
     def check_password(self,password):
         return check_password_hash(self.password_hash,password)
+
+    #定义用户头像函数
+    def avatar(self,size):
+        #邮箱号的hash值
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return 'https://cravatar.cn/avatar/{}?d=identicon&s={}'.format(digest,size)
+
     
 
     

@@ -1,9 +1,10 @@
 #-*- coding:utf-8 -*-
 #导入模块
+from wsgiref.validate import validator
 from flask_wtf import FlaskForm
 from werkzeug.routing import ValidationError
-from wtforms import SubmitField,PasswordField,StringField,BooleanField
-from wtforms.validators import DataRequired, Email, EqualTo
+from wtforms import SubmitField,PasswordField,StringField,BooleanField,TextAreaField
+from wtforms.validators import DataRequired, Email, EqualTo,Length
 from app.models import User
 # from email_validator import validate_email
 
@@ -35,4 +36,12 @@ class RegisterForm(FlaskForm):
         email = User.query.filter_by(email=email.data).first()
         if email is not None:
             raise ValidationError('Please use a different email address.')
+
+    
+#个人资料编辑类表单
+class EditProfileForm(FlaskForm):
+    username = StringField('Username',validators=[DataRequired()])
+    about_me = TextAreaField('About_me',validators=[Length(min=0,max=140)])
+    submit = SubmitField('Submit')
+    
 
