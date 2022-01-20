@@ -11,6 +11,13 @@ from hashlib import md5
 def load_user(id):
         return User.query.get(int(id))
 
+#关注者关联表
+followers = db.Table(
+    'followers',
+    db.Column('follower_id',db.Integer,db.ForeignKey('user.id')),
+    db.Column('followed_id',db.Integer,db.ForeignKey('user.id'))
+)
+
 #用户表
 class User(UserMixin,db.Model):
     id = db.Column(db.Integer,primary_key=True)
@@ -21,6 +28,14 @@ class User(UserMixin,db.Model):
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime,default=datetime.utcnow)
     posts = db.relationship('Post',backref='author',lazy='dynamic')
+    followed = db.relationship(
+        'User',
+        secondary = followers,
+        primaryjoin = (followers.c.follower_id==id),
+        secondaryjoin = (followers.c.followed_id==id),
+        backref = db.backref('followers',lazy='dynamic'),
+        lazy='dynamic'
+    )
 
 
     def __repr__(self) -> str:
@@ -41,11 +56,32 @@ class User(UserMixin,db.Model):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return 'https://cravatar.cn/avatar/{}?d=identicon&s={}'.format(digest,size)
 
-    
+    #检查两个用户是否已经存在关系
+    def is_following(self,user):
+        return self.followed.filter(followers.c.followed_id==user.id).count()>0
 
+    #添加关注者
+    def follow(self,user):
+        if not self.is_following(user):
+            self.followed.append(user)
     
+    #删除关注者
+    def unfollow(self,user):
+        if self.is_following(user):
+            self.followed.remove(user)
 
+    # #已关注用户的帖子的查询
+    # def followed_posts(self):
+    #     return Post.query.join(
+    #         followers, (followers.c.followed_id==Post.user_id)).filter(
+    #             followers.c.follower_id==self.id).order_by(
+    #                 Post.timestamp.desc())
     
+    #结合自己和关注者的照片
+    def followed_posts(self):
+        followed = Post.query.join(followers, (followers.c.followed_id == Post.user_id)).filter(followers.c.follower_id == self.id)
+        own = Post.query.filter_by(user_id=self.id)
+        return followed.union(own).order_by(Post.timestamp.desc())
 
 #帖子表
 class Post(db.Model):
