@@ -37,7 +37,17 @@ class RegisterForm(FlaskForm):
         if email is not None:
             raise ValidationError('Please use a different email address.')
 
-    
+#请求重置密码表单
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('Email',validators=[DataRequired()])
+    submit = SubmitField('Request Reset Password')
+
+#重置密码表单
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('Password',validators=[DataRequired()])
+    password2 = PasswordField('Repeat Password',validators=[DataRequired(),EqualTo('password')])
+    submit = SubmitField('Requeset Password Reset')
+
 #个人资料编辑类表单
 class EditProfileForm(FlaskForm):
     username = StringField('Username',validators=[DataRequired()])

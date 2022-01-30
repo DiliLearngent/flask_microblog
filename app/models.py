@@ -1,11 +1,14 @@
 #-*- coding:utf-8 -*-
-from app import db
+from app import db,app
 from datetime import datetime
 #导入密码哈希值计算和验证函数库
 from werkzeug.security import generate_password_hash,check_password_hash
 from flask_login import UserMixin
 from app import login
 from hashlib import md5
+from time import time
+import jwt
+
 
 @login.user_loader
 def load_user(id):
@@ -82,6 +85,21 @@ class User(UserMixin,db.Model):
         followed = Post.query.join(followers, (followers.c.followed_id == Post.user_id)).filter(followers.c.follower_id == self.id)
         own = Post.query.filter_by(user_id=self.id)
         return followed.union(own).order_by(Post.timestamp.desc())
+
+    #生成重置密码token
+    def get_reset_password_token(self,expires_in=600):
+        return jwt.encode({'reset_password':self.id,'exp':time()+expires_in},app.config['SECRET_KEY'],algorithm='HS256')
+
+    #验证token
+    def verify_reset_password_token(token):
+        try:
+            id = jwt.decode(token,app.config['SECRET_KEY'],algorithms=['HS256'])['reset_password']
+        except:
+            return
+        return User.query.get(id)
+
+        
+
 
 #帖子表
 class Post(db.Model):
